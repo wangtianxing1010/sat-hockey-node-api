@@ -20,5 +20,9 @@ router.post('/', (req, res)=>{
         .catch(err=> res.status(400).json({ errors: parseErrors(err.errors) }));
 })
 
+// router.post('/resend_confirmation_email', (req, res)=>{
+//     const { email, password } = req.body.user;
+//     sendConfirmationEmail(userReturned);
+// })
 
 export default router;
