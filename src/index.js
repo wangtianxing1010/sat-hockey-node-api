@@ -17,6 +17,7 @@ mongoose.connect(process.env.MONGODB_URL, { useCreateIndex: true , useNewUrlPars
 
 app.use('/api/auth', auth); 
 app.use('/api/users', users);
+app.use('/api/books', books);
 
 // app.post('/api/auth', (req, res) => {
 //     res.status(400).json({ errors: { global: "Invalid Credentials" } });
