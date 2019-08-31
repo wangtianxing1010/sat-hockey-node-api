@@ -2,10 +2,17 @@ import mongoose from 'mongoose';
 import uniqueValidator from 'mongoose-unique-validator';
 
 const schema = new mongoose.Schema({
+        // basic info 
         eventName: { type: String, required: true },
         maxAllowed: { type: Number, default: 0},
         admission: { type: Number, default: 0 },
         tags: {type:[String]}, 
+
+        // organizer view only
+        participants: [{
+            participantId:{type: mongoose.Schema.Types.ObjectId, required: true},
+            paid: {type: Boolean, default: false},
+        }],
         // time
         datetime: { type: Date, required: true},
         year: { type: Number, default: 0 },
@@ -27,4 +34,22 @@ const schema = new mongoose.Schema({
 
 schema.plugin(uniqueValidator, { message: "this email is already taken"});
 
-export default mongoose.model("User", schema);
+schema.methods.isPast = function isPast(){
+    // 0 upcoming
+    // 1 past
+    return this.datetime > Date.now() ? 1 : 0;
+}
+
+schema.methods.toggleIsPaid = function toggleIsPaid(participantId){
+    let isPaid = this.participants.id(participantId).paid;
+    isPaid ? this.participants.id(participantId).paid = false 
+                    : this.participants.id(participantId).paid = true;
+    return this.participants.id(participantId).paid
+}
+
+schema.methods.addParticipant = function addParticipant(participantId){
+    this.participants.push({participantId});
+    return this.participants.id(participantId).paid
+}
+
+export default mongoose.model("Event", schema);

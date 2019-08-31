@@ -5,11 +5,13 @@ import bodyParser from 'body-parser';
 
 import auth from './routes/auth';
 import users from './routes/users';
+import events from './routes/events';
 
 import dotenv from 'dotenv';
 import Promise from 'bluebird';
 
 dotenv.config();
+
 const app = express();
 app.use(bodyParser.json()); // parse request body
 mongoose.Promise = Promise;
@@ -17,7 +19,7 @@ mongoose.connect(process.env.MONGODB_URL, { useCreateIndex: true , useNewUrlPars
 
 app.use('/api/auth', auth); 
 app.use('/api/users', users);
-app.use('/api/books', books);
+app.use('/api/events', events);
 
 // app.post('/api/auth', (req, res) => {
 //     res.status(400).json({ errors: { global: "Invalid Credentials" } });

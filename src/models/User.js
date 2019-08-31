@@ -5,7 +5,7 @@ import uniqueValidator from 'mongoose-unique-validator';
 
 // to do add uniqueness and email validation
 const schema = new mongoose.Schema({
-    username: { type: String, required: true, index: true, unique: true },
+    username: { type: String, index: true, unique: true },
     email: { type: String, required: true, lowercase: true, index: true, unique: true },
     passwordHash: { type: String, required: true },
     confirmed: { type: Boolean, default: false },
