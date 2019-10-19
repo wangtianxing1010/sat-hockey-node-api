@@ -25,12 +25,12 @@ app.use('/api/events', events);
 //     res.status(400).json({ errors: { global: "Invalid Credentials" } });
 // });
 
-app.get("/*", (req, res)=>{
+app.get("/", (req, res)=>{
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 import books from './routes/__books';
 
-app.use('/api/books', books)
+app.use('/api/books', books);
 
 app.listen(8080, () => console.log("Running on localhost 8080"))
