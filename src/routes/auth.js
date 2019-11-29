@@ -6,28 +6,39 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
-router.post('/', (req, res) => {
+
+// user token authentication
+export const authenticate = (req, res, next) =>{
+    const {token} = req.headers;
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded)=>{
+        // expired or wrong token
+        if (err) res.status(401).json({ errors: { global: "Invalid token" }}).redirect('/login')
+        else if(decoded){
+            User.findOne({ email: decoded.email })
+            .then(user=>{
+                // token matches, pass down user object 
+                if(user.authenticationToken===token) next();
+                // token is not the latest 
+                else res.status(401).json({ errors: { global: "Invalid token" }}).redirect('/login');
+            })
+            // user not found
+            .catch(err=>res.status(500).json({errors: parseErrors(err.errors)}))
+        }
+    });
+}
+
+//login user
+router.post('/', authenticate, (req, res) => {
     const { credentials } = req.body;
     User.findOne({ email: credentials.email }).then(user =>{
         if(user && user.isValidPassword(credentials.password)){
-            res.json({ success: true, user: user.toAuthJSON() })
+            const token = user.setAuthenticationToken()
+            res.json({ success: true, user: user.toAuthJSON(), token:token })
         }else{
             res.status(400).json({ errors: { global: "Invalid Credentials" } });
         }
     });
 });
-
-router.post('/confirmation', (req, res)=>{
-    const {token} = req.body;
-    console.log(token);
-    User.findOneAndUpdate(
-        { confirmationToken: token },
-        { confirmationToken: '', confirmed: true},
-        { new: true } // mark it true to get an updated user object
-    ).then(user=>
-        user ? res.json({user: user.toAuthJSON()}) : res.status(400).json({errors: { global: "Invalid Token" }})
-    );
-})
 
 // Reset password
 router.post('/reset_password_request', (req, res)=>{
@@ -47,6 +58,7 @@ router.post('/reset_password_request', (req, res)=>{
         );
 });
 
+// token validation for reset password
 router.post('/validate_reset_password_token', (req, res)=>{
     const { token } = req.body;
     jwt.verify(token, process.env.SECRET_KEY, (err)=>{
@@ -58,6 +70,7 @@ router.post('/validate_reset_password_token', (req, res)=>{
     })
 });
 
+// reset password
 router.post('/reset_password', (req, res)=>{
     const { token, password } = req.body.data;
     jwt.verify(token, process.env.SECRET_KEY, (err, decoded)=>{

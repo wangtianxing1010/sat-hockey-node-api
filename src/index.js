@@ -15,7 +15,11 @@ dotenv.config();
 const app = express();
 app.use(bodyParser.json()); // parse request body
 mongoose.Promise = Promise;
-mongoose.connect(process.env.MONGODB_URL, { useCreateIndex: true , useNewUrlParser: true, useFindAndModify: false });
+mongoose.connect(process.env.MONGODB_URL, 
+        { useCreateIndex: true , 
+        useNewUrlParser: true, 
+        useFindAndModify: false }
+);
 
 app.use('/api/auth', auth); 
 app.use('/api/users', users);
@@ -28,9 +32,5 @@ app.use('/api/events', events);
 app.get("/", (req, res)=>{
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
-import books from './routes/__books';
-
-app.use('/api/books', books);
 
 app.listen(8080, () => console.log("Running on localhost 8080"))

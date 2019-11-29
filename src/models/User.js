@@ -3,7 +3,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 import uniqueValidator from 'mongoose-unique-validator';
 
-// to do add uniqueness and email validation
 const schema = new mongoose.Schema({
     username: { type: String, index: true, unique: true },
     email: { type: String, required: true, lowercase: true, index: true, unique: true },
@@ -11,6 +10,7 @@ const schema = new mongoose.Schema({
     confirmed: { type: Boolean, default: false },
     confirmationToken: { type: String, default: '' },
     resetPasswordToken: { type: String, default: '' },
+    authenticationToken: { type: String, default: '' },
     }, 
     { timestamps: true }
 );
@@ -23,24 +23,36 @@ schema.methods.isValidPassword = function isValidPassword(password){
     return bcrypt.compareSync(password, this.passwordHash);
 }
 
+// obtain user object
 schema.methods.toAuthJSON = function toAuthJSON(){
     return {
         email: this.email,
-        token: this.generateJWT(),
+        token: this.setAuthenticationToken(),
         confirmed: this.confirmed
     }
 }
 
-schema.methods.generateJWT = function generateJWT(){
-    return jwt.sign({
-        email: this.email,
-        confirmed: this.confirmed,
-    }, process.env.SECRET_KEY); 
+const generateJWT = (payload, expiresIn=null) => {
+    return jwt.sign(payload, process.env.SECRET_KEY, expiresIn); 
+}
+
+// User authentication token
+schema.methods.setAuthenticationToken = function setAuthenticationToken(){
+    this.authenticationToken = generateJWT(
+        {email: this.email, },
+        process.env.SECRET_KEY,
+        {expiresIn: '15d'}
+    );
+    return this.authenticationToken
 }
 
 // User confirmation
 schema.methods.setConfirmationToken = function setConfirmationToken(){
-    this.confrimationToken = this.generateJWT();
+    this.confrimationToken = generateJWT(
+        {email: this.email, confirmed: this.confirmed,},
+        process.env.SECRET_KEY,
+        {expiresIn: '1d'}
+    )
 }
 
 schema.methods.generateConfirmationUrl = function generateConfirmationUrl(){
@@ -49,10 +61,11 @@ schema.methods.generateConfirmationUrl = function generateConfirmationUrl(){
 
 // Reset Password
 schema.methods.setResetPasswordToken = function setResetPasswordToken(){
-    this.resetPasswordToken = jwt.sign({
-        id: this._id,
-    }, process.env.SECRET_KEY,
-    {expiresIn: '1h'}); 
+    this.resetPasswordToken = generateJWT(
+        { id: this._id, }, 
+        process.env.SECRET_KEY,
+        {expiresIn: '1h'}
+    ); 
     return this.resetPasswordToken
 }
 
