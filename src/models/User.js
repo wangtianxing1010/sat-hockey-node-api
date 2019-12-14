@@ -10,7 +10,7 @@ const schema = new mongoose.Schema({
     confirmed: { type: Boolean, default: false },
     confirmationToken: { type: String, default: '' },
     resetPasswordToken: { type: String, default: '' },
-    authenticationToken: { type: String, default: '' },
+    authToken: { type: String, default: '' },
     }, 
     { timestamps: true }
 );
@@ -25,11 +25,13 @@ schema.methods.isValidPassword = function isValidPassword(password){
 
 // obtain user object
 schema.methods.toAuthJSON = function toAuthJSON(){
-    return {
+    const userJSON = {
         email: this.email,
-        token: this.setAuthenticationToken(),
+        username: this.username,
+        token: this.authToken,
         confirmed: this.confirmed
     }
+    return userJSON
 }
 
 const generateJWT = (payload, expiresIn=null) => {
@@ -37,22 +39,25 @@ const generateJWT = (payload, expiresIn=null) => {
 }
 
 // User authentication token
-schema.methods.setAuthenticationToken = function setAuthenticationToken(){
-    this.authenticationToken = generateJWT(
-        {email: this.email, },
-        process.env.SECRET_KEY,
+schema.methods.setAuthToken = function setAuthToken(){
+    this.authToken = generateJWT(
+        { id: this._id, 
+            ///
+            email: this.email,
+            confirmed: this.confirmed,
+            username: this.username,
+        },
         {expiresIn: '15d'}
     );
-    return this.authenticationToken
+    return this.authToken;
 }
 
 // User confirmation
 schema.methods.setConfirmationToken = function setConfirmationToken(){
-    this.confrimationToken = generateJWT(
+    this.confirmationToken = generateJWT(
         {email: this.email, confirmed: this.confirmed,},
-        process.env.SECRET_KEY,
         {expiresIn: '1d'}
-    )
+    );
 }
 
 schema.methods.generateConfirmationUrl = function generateConfirmationUrl(){
@@ -63,7 +68,6 @@ schema.methods.generateConfirmationUrl = function generateConfirmationUrl(){
 schema.methods.setResetPasswordToken = function setResetPasswordToken(){
     this.resetPasswordToken = generateJWT(
         { id: this._id, }, 
-        process.env.SECRET_KEY,
         {expiresIn: '1h'}
     ); 
     return this.resetPasswordToken

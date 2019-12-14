@@ -7,16 +7,17 @@ import {authenticate} from './auth';
 const router = express.Router();
 
 // create user
-router.post('/', authenticate, (req, res)=>{
+router.post('/', (req, res)=>{
     const { email, password } = req.body.user;
     const user = new User({ email })
     user.setPassword( password );
     user.setConfirmationToken();
+    console.log('confirmToken',user.confirmationToken)
     user
         .save()
         .then(userReturned=> {
             res.json({ user: userReturned.toAuthJSON() });
-            console.log('node-api/src/routes/users.js', res);
+            console.log('node-api/src/routes/users.js', res.body.user.email);
             sendConfirmationEmail(userReturned);
         })
         .catch(err=> res.status(400).json({ errors: parseErrors(err.errors) }));
@@ -31,7 +32,9 @@ router.post('/confirmation', (req, res)=>{
         { confirmationToken: '', confirmed: true},
         { new: true } // mark it true to get an updated user object
     ).then(user=>
-        user ? res.json({user: user.toAuthJSON()}) : res.status(400).json({errors: { global: "Invalid Token" }})
+        user ? 
+        res.json({user: user.toAuthJSON()}) : 
+        res.status(400).json({errors: { global: "Invalid Token" }})
     );
 })
 
